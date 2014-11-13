@@ -201,12 +201,11 @@ INT32 ios_dir_read(UINT32 pin);
 
 VOID ard_init();
 VOID ard_close();
-void ard_test();
 INT32 i328_make(UINT32* offset, BYTE* bytecode, CHAR* code);
 
 HIOS ios_open(CHAR* t,CHAR* m);
-INT32 ios_write(HIOS h,const BYTE* v, UINT32 sz);
-INT32 ios_read(HIOS h, BYTE* v, UINT32 sz);
+INT32 ios_write(HIOS h,const VOID* v, UINT32 sz, UINT32 n);
+INT32 ios_read(HIOS h, VOID* v, UINT32 sz, UINT32 n);
 INT32 ios_ioctl(HIOS h, INT32 req, VOID* v);
 VOID ios_close(HIOS h);
 

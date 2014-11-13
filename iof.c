@@ -306,17 +306,17 @@ HIOS ios_open(CHAR* t,CHAR* m)
 	return h;
 }
 
-INT32 ios_write(HIOS h,const BYTE* v, UINT32 sz)
+INT32 ios_write(HIOS h,const VOID* v, UINT32 sz, UINT32 n)
 {
 	if (h && h->w) 
-		return h->w(h->p,v,sz);
+		return h->w(h->p,v,sz,n);
 	return 0;
 }
 
-INT32 ios_read(HIOS h, BYTE* v, UINT32 sz)
+INT32 ios_read(HIOS h, VOID* v, UINT32 sz, UINT32 n)
 {
 	if (h && h->r) 
-		return h->r(h->p,v,sz);
+		return h->r(h->p,v,sz,n);
 	return 0;
 }
 

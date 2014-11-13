@@ -4,6 +4,7 @@ library for the management of the shield input output for ODROID u3
 
 State:
 ======
+ * external device not tested
  * writing documentation
  * writing example
  * i328 input not tested
@@ -19,9 +20,10 @@ Required:
  * easytype
  * easythread
  * easyserial
-from
-Http://github.com/vbextreme/easyframework.git
+ <br>
+ from:    Http://github.com/vbextreme/easyframework.git
 
 Install:
 ========
-$./configure $sudo ./install
+$./configure<br>
+$sudo ./install

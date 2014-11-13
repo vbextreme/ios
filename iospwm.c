@@ -17,7 +17,7 @@ VOID* _pwm(VOID* s)
 	
 	THREAD_START(s,_HPWM*,h);
 		
-	_pin_write(h->hp,&h->em,1);
+	_pin_write(h->hp,&h->em,1,1);
 		
 	FLOAT64 offset;
 	FLOAT64 stt = ios_clock_get();
@@ -31,13 +31,13 @@ VOID* _pwm(VOID* s)
 		
 		offset = ios_clock_get();
 			w = !w;
-			_pin_write(h->hp,&w,1);
+			_pin_write(h->hp,&w,1,1);
 		offset = ios_clock_get() - offset;
 		usleep(h->don - offset * 1000000.0);
 		
 		offset = ios_clock_get();
 			w = !w;
-			_pin_write(h->hp,&w,1);
+			_pin_write(h->hp,&w,1,1);
 		offset = ios_clock_get() - offset;
 		usleep( (h->per * 1000000.0 - h->don) - offset * 1000000.0);
 		
@@ -47,7 +47,7 @@ VOID* _pwm(VOID* s)
 	
 	THREAD_ONEXIT
 	
-	_pin_write(h->hp,&h->em,1);
+	_pin_write(h->hp,&h->em,1,1);
 	
 	THREAD_END(NULL);
 }
@@ -69,12 +69,12 @@ VOID* _rwm(VOID* s)
 	{
 		THREAD_REQUEST();
 		
-		for (; !sync; _pin_read(h->hp,&sync,1) );
+		for (; !sync; _pin_read(h->hp,&sync,1,1) );
 		
 		dot = ios_clock_get();
-			for (; sync; _pin_read(h->hp,&sync,1) );
+			for (; sync; _pin_read(h->hp,&sync,1,1) );
 		pet = ios_clock_get();	
-			for (; !sync; _pin_read(h->hp,&sync,1) );
+			for (; !sync; _pin_read(h->hp,&sync,1,1) );
 		ent = ios_clock_get();
 		
 		if ( h->fq == 0 )
@@ -126,12 +126,15 @@ _HPWM* _pwm_open(CHAR* m)
 }
 
 ///0 pause 1 start 2 resume
-INT32 _pwm_write(_HPWM* h,const BYTE* v, UINT32 sz)
+INT32 _pwm_write(_HPWM* h, const VOID* v, UINT32 sz, UINT32 n)
 {
-	if ( sz != 1 ) return 0;
+	if ( sz < 1 ) return 0;
+	
+	BYTE* val = (BYTE*) v;
+	
 	if ( h->p ) 
 	{
-		if (*v)
+		if (*val)
 			ard_send(CMD_PWM_ENABLE,h->p,0,0);
 		else
 			ard_send(CMD_PWM_DISABLE,h->p,0,0);
@@ -139,11 +142,11 @@ INT32 _pwm_write(_HPWM* h,const BYTE* v, UINT32 sz)
 		return 1;
 	}
 	
-	if ( *v == 0 )
+	if ( !*val )
 		thr_requestwait(h->t);
-	else if ( *v == 1 )
+	else if ( *val == 1 )
 		thr_run(h->t,h);
-	else if ( *v == 2 )
+	else if ( *val == 2 )
 		thr_resume(h->t);
 	else 
 		return 0;
@@ -151,9 +154,9 @@ INT32 _pwm_write(_HPWM* h,const BYTE* v, UINT32 sz)
 	return 1;
 }
 
-INT32 _pwm_read(_HPWM* h, BYTE* v, UINT32 sz)
+INT32 _pwm_read(_HPWM* h, VOID* v, UINT32 sz, UINT32 n)
 {
-	if ( sz != 8 ) return 0;
+	if ( sz != 4 ) return 0;
 	if (h->d != 0) return 0;
 	if (h->p == 0) return 0;
 	
@@ -161,7 +164,9 @@ INT32 _pwm_read(_HPWM* h, BYTE* v, UINT32 sz)
 	
 	UINT32* p = (UINT32*) v;
 	*p++ = h->fq;
-	*p = h->duty;
+	
+	if ( n > 1 )
+		*p = h->duty;
 	
 	return 1;
 }

@@ -127,8 +127,8 @@
 typedef enum {HM_LDL,HM_U3L,HM_PIN,HM_PORT,HM_PULSE,HM_INT,HM_PWM,HM_328,HM_LCDA} HMODE;
 
 typedef VOID* (*_IOSOPEN)(CHAR*,CHAR*);
-typedef INT32 (*_IOSWRITE)(VOID*,const BYTE*,UINT32);
-typedef INT32 (*_IOSREAD)(VOID*,BYTE*,UINT32);
+typedef INT32 (*_IOSWRITE)(VOID*,const VOID*,UINT32,UINT32);
+typedef INT32 (*_IOSREAD)(VOID*,VOID*,UINT32,UINT32);
 typedef VOID (*_IOSCLOSE)(VOID*);
 typedef INT32 (*_IOSIOCTL)(VOID* h, INT32 req, VOID* s);
 
@@ -231,41 +231,41 @@ UINT32 ard_recv(BYTE* cppp);
 
 _HU3L* _u3l_open(CHAR* mode);
 INT32 _u3l_ioctl(_HU3L* h, INT32 req, VOID* val);
-INT32 _u3l_write(_HU3L* h,const BYTE* v, UINT32 sz);
+INT32 _u3l_write(_HU3L* h,const VOID* v, UINT32 sz, UINT32 n);
 VOID _u3l_close(_HU3L* h);
 
 _HIO* _pin_open(CHAR* mode);
 INT32 _pin_ioctl(_HIO* h, INT32 req, VOID* val);
-INT32 _pin_write(_HIO* h,const BYTE* v, UINT32 sz);
-INT32 _pin_read(_HIO* h, BYTE* v, UINT32 sz);
+INT32 _pin_write(_HIO* h, const VOID* v, UINT32 sz, UINT32 n);
+INT32 _pin_read(_HIO* h, VOID* v, UINT32 sz, UINT32 n);
 VOID _pin_close(_HIO* h);
 
 _HPORT* _port_open(CHAR* mode);
 INT32 _port_ioctl(_HPORT* h, INT32 req, VOID* val);
-INT32 _port_write(_HPORT* h,const BYTE* v, UINT32 sz);
-INT32 _port_read(_HPORT* h, BYTE* v, UINT32 sz);
+INT32 _port_write(_HPORT* h, const VOID* v, UINT32 sz, UINT32 n);
+INT32 _port_read(_HPORT* h, VOID* v, UINT32 sz, UINT32 n);
 VOID _port_close(_HPORT* h);
 
 _HPULSE* _pulse_open(CHAR* mode);
 INT32 _pulse_ioctl(_HPULSE* h, INT32 req, VOID* val);
-INT32 _pulse_write(_HPULSE* h,const BYTE* v, UINT32 sz);
-INT32 _pulse_read(_HPULSE* h, BYTE* v, UINT32 sz);
+INT32 _pulse_write(_HPULSE* h,const VOID* v, UINT32 sz, UINT32 n);
+INT32 _pulse_read(_HPULSE* h, VOID* v, UINT32 sz, UINT32 n);
 VOID _pulse_close(_HPULSE* h);
 
 _HINT* _int_open(CHAR* m);
 INT32 _int_ioctl(_HINT* h, INT32 req, VOID* val);
-INT32 _int_write(_HINT* h,const BYTE* v, UINT32 sz);
+INT32 _int_write(_HINT* h, const VOID* v, UINT32 sz, UINT32 n);
 VOID _int_close(_HINT* h);
 
 _HPWM* _pwm_open(CHAR* m);
-INT32 _pwm_write(_HPWM* h,const BYTE* v, UINT32 sz);
-INT32 _pwm_read(_HPWM* h, BYTE* v, UINT32 sz);
+INT32 _pwm_write(_HPWM* h,const VOID* v, UINT32 sz, UINT32 n);
+INT32 _pwm_read(_HPWM* h, VOID* v, UINT32 sz, UINT32 n);
 INT32 _pwm_ioctl(_HPWM* h, INT32 req, VOID* s);
 VOID _pwm_close(_HPWM* h);
 
 _H328* _328_open(CHAR* m);
-INT32 _328_write(_H328* h,const BYTE* v, UINT32 sz);
-INT32 _328_read(_H328* h,BYTE* v, UINT32 sz);
+INT32 _328_write(_H328* h,const VOID* v, UINT32 sz, UINT32 n);
+INT32 _328_read(_H328* h, VOID* v, UINT32 sz, UINT32 n);
 INT32 _328_ioctl(_H328* h, INT32 req, VOID* val);
 VOID _328_close(_H328* h);
 

@@ -25,6 +25,8 @@ INT32 _u3l_ioctl(_HU3L* h, INT32 req, VOID* val)
 	CHAR pport[MAX_INPATH];
 	INT32 f;
 	
+	lseek(h->f,0,SEEK_SET);
+	
 	switch (req)
 	{
 		case IOS_IOCTL_U3L_MMC:
@@ -76,11 +78,13 @@ INT32 _u3l_ioctl(_HU3L* h, INT32 req, VOID* val)
 	return 0;
 }
 
-INT32 _u3l_write(_HU3L* h,const BYTE* v, UINT32 sz)
+INT32 _u3l_write(_HU3L* h,const VOID* v, UINT32 sz, UINT32 n)
 {
-	if (sz != 1) return 0;
+	if (sz != 1 && n != 1) return 0;
 	
-	if ( write(h->f,(*v) ? "default-on" : "none",(*v) ? 10 : 4) < 0 ) {return 0;}
+	BYTE* s = (BYTE*) v;
+	lseek(h->f,0,SEEK_SET);
+	if ( write(h->f,(*s) ? "default-on" : "none",(*s) ? 10 : 4) < 0 ) {return 0;}
 	
 	fsync(h->f);
 	return 1;
@@ -148,44 +152,64 @@ INT32 _pin_ioctl(_HIO* h, INT32 req, VOID* val)
 	return 0;
 }
 
-INT32 _pin_write(_HIO* h,const BYTE* v, UINT32 sz)
+INT32 _pin_write(_HIO* h,const VOID* v, UINT32 sz, UINT32 n)
 {
-	if (sz != 1) return 0;
+	if (sz < 1) return 0;
 	if (h->d != 1) return 0;
+	
+	const BYTE* val = (const BYTE*) v;
 	
 	if ( h->a )
 	{
-		return ard_send(CMD_PIN_WRITE,(BYTE)h->p,*v,0);
+		while(n--)
+		{
+			if ( !ard_send(CMD_PIN_WRITE,(BYTE)h->p,*val,0) ) return 0;
+			val += sz;
+		}
 	}
 	
-	if ( write(h->f,(*v) ? "1" : "0",1) < 0 ) {return 0;}
-	fsync(h->f);
+	while( n-- )
+	{
+		lseek(h->f,0,SEEK_SET);
+		if ( write(h->f,(*val) ? "1" : "0",1) < 0 ) {return 0;}
+		fsync(h->f);
+		val += sz;
+	}
+	
 	return 1;
 }
 
-INT32 _pin_read(_HIO* h, BYTE* v, UINT32 sz)
+INT32 _pin_read(_HIO* h, VOID* v, UINT32 sz, UINT32 n)
 {
-	if ( sz != 2 ) return 0;
+	if ( sz < 2 ) return 0;
 	if (h->d != 0) return 0;	
 	BYTE vr[4];
+	BYTE* val = (BYTE*) v;
+	memset(v,0,sz*n);
 	
 	if ( h->a )
 	{
-		UINT32 ret = ard_send(CMD_PIN_READ,(BYTE)h->p,0,0);
-		if ( !ret ) return 0;
-		ret = ard_recv(vr);
-		if ( !ret ) return 0;
-		if ( vr[0] != CMD_PIN_READ ) return 0;
-		*v++ = vr[3];
-		*v   = vr[2];
-		return (INT32)ret;
+		sz -= 2;
+		while ( n-- )
+		{
+			UINT32 ret = ard_send(CMD_PIN_READ,(BYTE)h->p,0,0);
+			if ( !ret ) return 0;
+			if ( !(ret = ard_recv(vr)) ) return 0;
+			if ( vr[0] != CMD_PIN_READ ) return 0;
+			*val++ = vr[3];
+			*val++ = vr[2];
+			*val += sz;
+			return 1;
+		}
 	}
 	
-	lseek(h->f,0,SEEK_SET);
-	if ( read(h->f,vr,1) < 0 ) {return 0;}
-	
-	*v++ = vr[0] - '0';
-	*v++ = 0;
+	while ( n-- )
+	{
+		lseek(h->f,0,SEEK_SET);
+		if ( read(h->f,vr,1) < 0 ) {return 0;}
+		*val = vr[0] - '0';
+		*val += sz;
+	}
 	
 	return 1;
 }
@@ -257,41 +281,53 @@ INT32 _port_ioctl(_HPORT* h, INT32 req, VOID* val)
 	return 0;
 }
 
-INT32 _port_write(_HPORT* h,const BYTE* v, UINT32 sz)
+INT32 _port_write(_HPORT* h,const VOID* v, UINT32 sz, UINT32 n)
 {
-	if (sz != 1) return 0;
+	if (sz < 0) return 0;
 	if (h->d != 1) return 0;
 	
-	int i;
+	INT32 i;
 	BYTE bit;
+	BYTE* val = (BYTE*) v;
 	
-	for (i = 0; i < 8; i++)
+	while( n-- )
 	{
-		if ( h->p[i] ) 
+		for (i = 0; i < 8; i++)
 		{
-			bit = (*v >> i) & 0x01;
-			if ( !_pin_write(h->p[i],&bit,1) ) return 0;
+			if ( h->p[i] ) 
+			{
+				bit = (*val >> i) & 0x01;
+				if ( !_pin_write(h->p[i],&bit,1,1) ) return 0;
+			}
 		}
+		*val += sz;
 	}
 	return 1;
 }
 
-INT32 _port_read(_HPORT* h, BYTE* v, UINT32 sz)
+INT32 _port_read(_HPORT* h, VOID* v, UINT32 sz, UINT32 n)
 {
-	if (sz != 1) return 0;
+	if (sz < 1) return 0;
 	if (h->d != 0) return 0;
 	
-	*v = 0;
+	BYTE* val = (BYTE*) v;
+	memset(v,0,sz*n);
 	
-	int i;
+	INT32 i;
 	UINT16 r;
-	for (i = 0; i < 8; i++) 
+	
+	while ( n-- )
 	{
-		if ( h->p[i] ) 
+		for (i = 0; i < 8; i++) 
 		{
-			if ( !_pin_read(h->p[i],(BYTE*)&r,2) ) return 0;
-			*v |= ( r << i );
+			if ( h->p[i] ) 
+			{
+				if ( !_pin_read(h->p[i],&r,2,1) ) return 0;
+				*val |= ( r << i );
+			}
 		}
+		
+		val += sz;
 	}
 	return 1;
 }
@@ -336,7 +372,7 @@ INT32 _pulse_ioctl(_HPULSE* h, INT32 req, VOID* val)
 				if ( h->p ) _pin_close(h->p);
 				if ( !(h->p = _pin_open((h->d) ? "w" : "r")) ) { return IOS_ERR_OPEN; }
 				if ( (ret = _pin_ioctl(h->p,IOS_IOCTL_PIN_SET,val)) ) {_pin_close(h->p); h->p = NULL; return ret;}
-				if ( h->d && !_pin_write(h->p,&h->s,1) ) {_pin_close(h->p); h->p = NULL; return IOS_ERR_WRITE;}
+				if ( h->d && !_pin_write(h->p,&h->s,1,1) ) {_pin_close(h->p); h->p = NULL; return IOS_ERR_WRITE;}
 			}
 			else if ( *p >= IOS_D00 && *p <= IOS_A05)
 			{
@@ -355,7 +391,7 @@ INT32 _pulse_ioctl(_HPULSE* h, INT32 req, VOID* val)
 				else
 				{
 					h->s = !h->s;
-					if ( !_pin_write(h->p,&h->s,1) ) return IOS_ERR_WRITE;
+					if ( !_pin_write(h->p,&h->s,1,1) ) return IOS_ERR_WRITE;
 				}
 			}
 			else
@@ -381,72 +417,107 @@ INT32 _pulse_ioctl(_HPULSE* h, INT32 req, VOID* val)
 	return 0;
 }
 
-INT32 _pulse_write(_HPULSE* h,const BYTE* v, UINT32 sz)
+INT32 _pulse_write(_HPULSE* h, const VOID* v, UINT32 sz, UINT32 n)
 {
-	if (sz != 1) return 0;
+	if (sz < 1) return 0;
 	if (h->d != 1) return 0;
-	if (*v != 1) return 0;
+	
+	BYTE* val = (BYTE*) v;
 	
 	if ( h->a )
 	{
-		BYTE c = ( h->s ) ? CMD_PULSEU_OUT : CMD_PULSED_OUT;
-		ard_send(c, h->a, (BYTE)h->us, (BYTE)(h->us >> 8));
+		while ( n-- )
+		{
+			BYTE c = ( h->s ) ? CMD_PULSEU_OUT : CMD_PULSED_OUT;
+		    if (*val) if ( !ard_send(c, h->a, (BYTE)h->us, (BYTE)(h->us >> 8)) ) return 0;
+			val += sz;
+		}
 		return 1;
 	}
 	
-	UINT32 nck = ios_uclock_get();
-	if ( nck - h->ck < h->us ) ios_usleep( nck - h->ck );
+	while( n-- )
+	{
+		if ( !*val ) continue;
+		UINT32 nck = ios_uclock_get();
+		if ( nck - h->ck < h->us ) ios_usleep( nck - h->ck );
 	
-	h->s = !h->s;
-	if ( !_pin_write(h->p,&h->s,1) ) {return 0;}
-	ios_usleep( h->us );
+		h->s = !h->s;
+		if ( !_pin_write(h->p,&h->s,1,1) ) {return 0;}
+		ios_usleep( h->us );
 	
-	h->s = !h->s;
-	if ( !_pin_write(h->p,&h->s,1) ) {return 0;}
+		h->s = !h->s;
+		if ( !_pin_write(h->p,&h->s,1,1) ) {return 0;}
 	
-	h->ck = ios_uclock_get();
+		h->ck = ios_uclock_get();
+		
+		val += sz;
+	}
+	
 	return 1;
 }
 
-INT32 _pulse_read(_HPULSE* h, BYTE* v, UINT32 sz)
+INT32 _pulse_read(_HPULSE* h, VOID* v, UINT32 sz, UINT32 n)
 {
-	if ( sz != 8 ) return 0;
+	if ( sz < 1 ) return 0;
 	if (h->d != 0 ) return 0;
 	
-	FLOAT64 *res =(FLOAT64*) v;
+	FLOAT64 res;
 	
 	if ( h->a )
 	{
-		BYTE c = ( h->mr ) ? CMD_PULSEC_IN : CMD_PULSEF_IN;
-		ard_send(c, h->a, h->s, 0);
-		BYTE r[4];
-		ard_recv(r);
-		if ( r[0] != c ) return IOS_ERR_READ;
-		UINT32 clk = r[1] | (UINT32)(r[2] << 8) | (UINT32)(r[3] << 16);
-		*res = (FLOAT64)(clk);
-		*res /= 1000000.0;
-		if ( !h->mr )
-			*res = 1.0 / *res;
+		while ( n-- )
+		{
+			BYTE c = ( h->mr ) ? CMD_PULSEC_IN : CMD_PULSEF_IN;
+			ard_send(c, h->a, h->s, 0);
+			BYTE r[4];
+			ard_recv(r);
+			if ( r[0] != c ) return IOS_ERR_READ;
+			UINT32 clk = r[1] | (UINT32)(r[2] << 8) | (UINT32)(r[3] << 16);
+			res = (FLOAT64)(clk);
+			res /= 1000000.0;
+			if ( !h->mr ) res = 1.0 / res;
+			switch( sz )
+			{
+				case 8:	*((FLOAT64*)(v)) = res; ++v; break;
+				case 4:	*((FLOAT32*)(v)) = (FLOAT32) res; ++v; break;
+				default: return 0;
+			}
+		}
 		return 1;
 	}
-	
 	
 	UINT16 r;
 	FLOAT64 clks;
 	
-	for (_pin_read(h->p,(BYTE*)&r,2); r == h->s; _pin_read(h->p,(BYTE*)&r,2) );
-	for (_pin_read(h->p,(BYTE*)&r,2); r != h->s; _pin_read(h->p,(BYTE*)&r,2) );
-	
-	clks = ios_clock_get();
-	for (_pin_read(h->p,(BYTE*)&r,2); r == h->s; _pin_read(h->p,(BYTE*)&r,2) );
-	if ( h->mr )
+	while( n-- )
 	{
-		*res = (ios_clock_get() - clks);
-		return 1;
+		for (_pin_read(h->p,&r,2,1); r == h->s; _pin_read(h->p,&r,2,1) );
+		for (_pin_read(h->p,&r,2,1); r != h->s; _pin_read(h->p,&r,2,1) );
+	
+		clks = ios_clock_get();
+		for (_pin_read(h->p,&r,2,1); r == h->s; _pin_read(h->p,&r,2,1) );
+		if ( h->mr )
+		{
+			res = (ios_clock_get() - clks);
+			switch( sz )
+			{
+				case 8:	*((FLOAT64*)(v)) = res; ++v; break;
+				case 4:	*((FLOAT32*)(v)) = (FLOAT32) res; ++v; break;
+				default: return 0;
+			}
+			continue;
+		}
+	
+		for (_pin_read(h->p,&r,2,1); r != h->s; _pin_read(h->p,&r,2,1) );
+		res = 1.0 / (ios_clock_get() - clks);
+		switch( sz )
+		{
+			case 8:	*((FLOAT64*)(v)) = res; ++v; break;
+			case 4:	*((FLOAT32*)(v)) = (FLOAT32) res; ++v; break;
+			default: return 0;
+		}
 	}
 	
-	for (_pin_read(h->p,(BYTE*)&r,2); r != h->s; _pin_read(h->p,(BYTE*)&r,2) );
-	*res = 1.0 / (ios_clock_get() - clks);
 	return 1;
 }
 
@@ -473,10 +544,10 @@ VOID* _rint(VOID* s)
 		
 		do
 		{
-			for (_pin_read(h->p,(BYTE*)&rd,2); set != rd; _pin_read(h->p,(BYTE*)&rd,2) )
+			for (_pin_read(h->p,&rd,2,1); set != rd; _pin_read(h->p,&rd,2,1) )
 				ios_usleep(h->bou);
 			ios_usleep(h->bou);
-			_pin_read(h->p,(BYTE*)&rd,2);
+			_pin_read(h->p,&rd,2,1);
 		}while ( set != rd);
 		
 		if ( h->mode == IOS_INT_CBK )
@@ -487,12 +558,12 @@ VOID* _rint(VOID* s)
 		{
 			if (fork() == 0 )
 			{
-				execl("/bin/sh", "sh", "-c", h->ph, (CHAR*)0);
+				execl("/bin/sh", "sh", "-c", h->ph, NULL);
 				return 0;
 			}
 		}
 		
-		for ( _pin_read(h->p,(BYTE*)&rd,2); set == rd; _pin_read(h->p,(BYTE*)&rd,2) )
+		for ( _pin_read(h->p,&rd,2,1); set == rd; _pin_read(h->p,&rd,2,1) )
 				ios_usleep(h->bou);
 	}
 	
@@ -569,15 +640,17 @@ INT32 _int_ioctl(_HINT* h, INT32 req, VOID* val)
 }
 
 ///0 pause 1 start 2 resume
-INT32 _int_write(_HINT* h,const BYTE* v, UINT32 sz)
+INT32 _int_write(_HINT* h, const VOID* v, UINT32 sz, UINT32 n)
 {
-	if ( sz != 1 ) return 0;
-
-	if ( *v == 0 )
+	if ( sz < 1 ) return 0;
+	
+	BYTE* val = (BYTE*) v;
+	
+	if ( !*val )
 		thr_requestwait(h->t);
-	else if ( *v == 1 )
+	else if ( *val == 1 )
 		thr_run(h->t,h);
-	else if ( *v == 2 )
+	else if ( *val == 2 )
 		thr_resume(h->t);
 	else 
 		return 0;

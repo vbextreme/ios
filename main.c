@@ -103,7 +103,7 @@ int main()
 	if ( ios_ioctl(t,IOS_IOCTL_INT_BOUNCE,&pin) ) {puts("ERROR iOCTL bopu");return 0;}
 	
 	BYTE st = 1;
-	ios_write(t,&st,1);
+	ios_write(t,&st,1,1);
 	
 	ios_ioctl(t,IOS_IOCTL_INT_WAIT,NULL);
 	
