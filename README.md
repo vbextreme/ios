@@ -27,3 +27,7 @@ Install:
 ========
 $./configure<br>
 $sudo ./install
+
+cd ./terminios<br>
+$./configure<br>
+$sudo ./install
