@@ -1,0 +1,114 @@
+#!/bin/bash
+
+############################
+#default makefile TERMINIOS#
+############################
+
+echo "create default makefile terminios"
+echo "#auto ios" > ./makefile_auto
+echo "LIBPRJNAME = " >> ./makefile_auto
+echo "HMASTER    = " >> ./makefile_auto
+echo "LIBSO      = -lios" >> ./makefile_auto
+echo "LIBA       = " >> ./makefile_auto
+echo "APPIPATH   = /usr/bin/" >> ./makefile_auto
+echo "LIBIPATH   = /usr/lib/" >> ./makefile_auto
+echo "IHPATH     = /usr/include/" >> ./makefile_auto
+echo "APPCFLAGS  = -Wall -O2 -rdynamic" >> ./makefile_auto
+echo "APPDFLAGS  = -Wall -O2" >> ./makefile_auto
+echo "LIBCFLAGS  = -Wall -O2 -rdynamic" >> ./makefile_auto
+echo "LIBDFLAGS  = -O2" >> ./makefile_auto
+echo "APPDEFINE  = -D_APP" >> ./makefile_auto
+echo "LIBDEFINE  = -D_LIB" >> ./makefile_auto
+echo "APPCC      = gcc" >> ./makefile_auto
+echo "APPLK      = gcc" >> ./makefile_auto
+echo "LIBCC      = gcc" >> ./makefile_auto
+echo "LIBLK      = ld" >> ./makefile_auto
+echo "CFILE      = \$(shell echo *.c)" >> ./makefile_auto
+echo "HFILE      = \$(shell echo *.h)" >> ./makefile_auto
+echo "APPOBJPATH = ./obj/" >> ./makefile_auto
+echo "LIBOBJPATH = ./oobj/" >> ./makefile_auto
+echo "APPOFILE   = \$(patsubst %.c,\$(APPOBJPATH)%.o,\$(CFILE))" >> ./makefile_auto 
+echo "LIBOFILE   = \$(patsubst %.c,\$(LIBOBJPATH)%.o,\$(CFILE))" >> ./makefile_auto
+echo "" >> ./makefile_auto
+echo "all:" >> ./makefile_auto
+echo "	@echo use app or lib" >> ./makefile_auto
+echo "" >> ./makefile_auto
+echo "app: \$(APPPRJNAME)" >> ./makefile_auto
+echo "	@echo end make \$(APPPRJNAME)" >> ./makefile_auto
+echo "" >> ./makefile_auto
+echo "\$(APPPRJNAME): \$(APPOFILE)" >> makefile_auto
+echo "	\$(APPLK) \$(APPDFLAGS) -o \$(APPPRJNAME) \$(APPOFILE) \$(LIBA) \$(LIBSO)" >> ./makefile_auto
+echo "" >> ./makefile_auto
+echo "\$(APPOBJPATH)%.o: %.c \$(HFILE)" >> ./makefile_auto
+echo "	\$(APPCC) \$(APPCFLAGS) -c \$< -o \$@ \$(APPDEFINE)" >> ./makefile_auto
+echo "" >> ./makefile_auto
+echo "lib: \$(LIBPRJNAME)" >> ./makefile_auto
+echo "	@echo end make \$(LIBPRJNAME)" >> ./makefile_auto
+echo "" >> ./makefile_auto
+echo "\$(LIBPRJNAME): \$(LIBOFILE)" >> makefile_auto
+echo "	\$(LIBLK) \$(LIBDFLAGS) -shared -o \$(LIBPRJNAME) \$(LIBOFILE) \$(LIBA) \$(LIBSO)" >> ./makefile_auto
+echo "" >> ./makefile_auto
+echo "\$(LIBOBJPATH)%.o: %.c \$(HFILE)" >> ./makefile_auto
+echo "	\$(LIBCC) \$(LIBCFLAGS) -fpic -c \$< -o \$@ \$(LIBDEFINE)" >> ./makefile_auto
+echo "" >> ./makefile_auto
+echo "appclean:" >> ./makefile_auto
+echo "	rm -rf \$(APPOBJPATH)*.o" >> ./makefile_auto
+echo "	rm -rf ./\$(APPPRJNAME)" >> ./makefile_auto
+echo "" >> ./makefile_auto
+echo "libclean:" >> ./makefile_auto
+echo "	rm -rf \$(LIBOBJPATH)*.o" >> ./makefile_auto
+echo "	rm -rf ./\$(LIBPRJNAME)" >> ./makefile_auto
+echo "" >> ./makefile_auto
+echo "appinstall:" >> ./makefile_auto
+echo "	cp ./\$(APPPRJNAME) \$(APPIPATH)\$(APPPRJNAME)" >> ./makefile_auto
+echo "" >> ./makefile_auto
+echo "libinstall:" >> ./makefile_auto
+echo "	cp ./\$(LIBPRJNAME) \$(LIBIPATH)\$(LIBPRJNAME)" >> ./makefile_auto
+echo "	cp ./\$(HMASTER) \$(IHPATH)\$(HMASTER)" >> ./makefile_auto
+
+echo "generate makefile iost"
+echo "APPPRJNAME = ios" > ./ios/makefile_auto
+cat ./makefile_auto >> ./ios/makefile_auto
+
+echo "generate makefile daemonios"
+echo "APPPRJNAME = daemonios" > ./daemonios/makefile_auto
+cat ./makefile_auto >> ./daemonios/makefile_auto
+
+#########
+# BUILD #
+#########
+
+echo "generate daemonios"
+cd ./daemonios
+mkdir -p ./oobj
+mkdir -p ./obj
+make -f ./makefile_auto app
+cd ..
+
+echo "generate ios"
+cd ./ios
+mkdir -p ./oobj
+mkdir -p ./obj
+make -f ./makefile_auto app
+cd ..
+
+##############
+#file install#
+##############
+echo "create install file"
+echo "#!/bin/bash" > ./install
+
+echo "echo \"install terminios\"" >> ./install
+echo "cd ./daemonios" >> ./install
+echo "make -f makefile_auto appinstall" >> ./install
+echo "cd .." >> ./install
+echo "cd ./ios" >> ./install
+echo "make -f makefile_auto appinstall" >> ./install
+echo "cd .." >> ./install
+echo "mkdir -p ~/.config/daemonios" >> ./install
+chmod +x ./install
+
+#####
+#end#
+#####
+echo "for install \$sudo ./install"

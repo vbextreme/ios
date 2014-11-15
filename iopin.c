@@ -56,7 +56,7 @@ INT32 _u3l_ioctl(_HU3L* h, INT32 req, VOID* val)
 		break;
 		case IOS_IOCTL_U3L_TIMER_ON:	
 			sprintf(pport,"%s%s",FILE_ULED,"delay_on");
-			if ( (f = open(pport,O_CREAT | O_WRONLY | O_TRUNC)) < 0 )  {return IOS_ERR_OPEN;}
+			if ( (f = open(pport,O_CREAT | O_WRONLY | O_TRUNC,0666)) < 0 )  {return IOS_ERR_OPEN;}
 			sprintf(pport,"%d",*p);
 			if ( write(f,pport,strlen(pport)) < 0 ) {close(f);return IOS_ERR_IOCTL;}
 			fsync(f);
@@ -64,7 +64,7 @@ INT32 _u3l_ioctl(_HU3L* h, INT32 req, VOID* val)
 		break;
 		case IOS_IOCTL_U3L_TIMER_OFF:	
 			sprintf(pport,"%s%s",FILE_ULED,"delay_off");
-			if ( (f = open(pport,O_CREAT | O_WRONLY | O_TRUNC)) < 0 )  {return IOS_ERR_OPEN;}
+			if ( (f = open(pport,O_CREAT | O_WRONLY | O_TRUNC,0666)) < 0 )  {return IOS_ERR_OPEN;}
 			sprintf(pport,"%d",*p);
 			if ( write(f,pport,strlen(pport)) < 0 ) {close(f);return IOS_ERR_IOCTL;}
 			fsync(f);
