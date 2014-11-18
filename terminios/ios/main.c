@@ -54,10 +54,11 @@ void help()
 	puts("");	
 }
 
-void aliasreset()
+void aliasreset(CHAR* patha)
 {
-	remove(TIO_ALIAS);
-	FILE* f = fopen(TIO_ALIAS,"w");
+	remove(patha);
+	
+	FILE* f = fopen(patha,"w");
 		if (!f ) return;
 	
 	fprintf(f,"--verbose = 0x%X\n", TIO_CMD_VERBOSE);
@@ -110,7 +111,7 @@ void aliasreset()
 	for ( i = 0; i < 8; ++i)
 		fprintf(f,"portset%d = 0x%X\n" ,i, IOS_IOCTL_PORT_SET_0 + i);
 	
-	fprintf(f,"portseta = 0x%X\n", IOS_IOCTL_PORT_SET_A);
+	//fprintf(f,"portseta = 0x%X\n", IOS_IOCTL_PORT_SET_A);
 	
 	fprintf(f,"u3lmmc = 0x%X\n", IOS_IOCTL_U3L_MMC);
 	fprintf(f,"u3lgpio = 0x%X\n", IOS_IOCTL_U3L_GPIO);
@@ -140,15 +141,15 @@ void aliasreset()
 	fclose(f);
 }
 
-INT32 aliasinit()
+INT32 aliasinit(CHAR* patha)
 {
 	ali_init(&ha);
 	
-	FILE* f = fopen(TIO_ALIAS,"r");
+	FILE* f = fopen(patha,"r");
 	if ( !f ) 
 	{
-		aliasreset();
-		if ( !(f = fopen(TIO_ALIAS,"r")) ) return 0;
+		aliasreset(patha);
+		if ( !(f = fopen(patha,"r")) ) return 0;
 	}
 	
 	CHAR line[256];
@@ -171,7 +172,7 @@ INT32 aliasinit()
 		while( *p && (*p == ' ' || *p == '\t') ) ++p;
 		for ( sz = 0; *p && *p != ' ' && *p != '\t' && *p != '\n' && sz < TIO_ALIAS_SZ; val[sz++] = *p++ );
 		val[sz] = '\0';
-		
+		//printf("debug:%s = %s = %d = 0x%X\n",newa , val, (INT32)strtol(val,NULL,0),(INT32)strtol(val,NULL,0));
 		ali_add( &ha, newa , (INT32)strtol(val,NULL,0));
 	}
 	
@@ -192,11 +193,12 @@ BOOL _setpin(INT32* p, CHAR* arg)
 	ALIAS* f = ali_find( &ha, arg);
 	if ( !f )
 	{
-		*p = atoi(arg);
+		*p = (INT32)strtol(arg,NULL,0);
 		return ( *p <= 0 ) ? FALSE : TRUE;
 	}
 	
 	*p = f->val;
+	printf("ON ALIAS:%d\n",f->val);
 	return TRUE;
 }
 
@@ -212,7 +214,7 @@ BOOL _setsz(UINT32* sz, CHAR* arg)
 INT32 _valarg(CHAR* arg)
 {
 	ALIAS* f = ali_find( &ha, arg);
-	return ( !f ) ? atoi(arg) : f->val;
+	return ( !f ) ? (INT32)strtol(arg,NULL,0) : f->val;
 }
 
 INT32 startexit(INT32 mode,CHAR* argd)
@@ -247,7 +249,16 @@ INT32 startexit(INT32 mode,CHAR* argd)
 
 int main(int argc,char** argv)
 {	
-	if ( !aliasinit(&ha) ) {puts("Error to initialize alias"); return -1;}
+	if ( argc > 2 && !strcmp(*(argv+1),"--filealias") )
+	{
+		argc -= 2;
+		if ( !aliasinit(*(argv+2)) ) {puts("Error to initialize user alias"); return -1;}
+		argv += 2;
+	}
+	else
+	{
+		if ( !aliasinit(TIO_ALIAS) ) {puts("Error to initialize alias"); return -1;}
+	}
 	
 	MSGCMD m;
 	iot_msg_reset(&m);
@@ -279,7 +290,7 @@ int main(int argc,char** argv)
 		switch ( f->val )
 		{
 			case TIO_CMD_ALIASRESET:
-				aliasreset();
+				aliasreset(TIO_ALIAS);
 				_verbose("Ok");
 			return 0;
 			
@@ -288,21 +299,18 @@ int main(int argc,char** argv)
 			return 0;
 			
 			case TIO_CMD_MDELAY:
-				++argv;
 				_TESTP(1)
 				ios_msleep( atoi(*(argv+1)) );
 				_verbose("end sleep");
 			return 0;
 			
 			case TIO_CMD_UDELAY:
-				++argv;
 				_TESTP(1)
 				ios_usleep( atoi(*(argv+1)) );
 				_verbose("end sleep");
 			return 0;
 			
 			case TIO_CMD_NDELAY:
-				++argv;
 				_TESTP(1)
 				ios_nsleep( atoi(*(argv+1)) );
 				_verbose("end sleep");
@@ -352,7 +360,7 @@ int main(int argc,char** argv)
 			
 			case TIO_CMD_EXPORTED:
 				_TESTP(1)
-				if ( !_setpin(&iarg,*argv) ) { puts("error pin"); return -6;}
+				if ( !_setpin(&iarg,*(argv+1)) ) { puts("error pin"); return -6;}
 				printf("%d\n",ios_exported(iarg));
 			return 0;
 			
@@ -386,7 +394,7 @@ int main(int argc,char** argv)
 				m.r = 1;
 				_TESTP(1);
 				++argv;
-				if ( !_setsz(&m.sz,*argv) ) m.sz = 1;
+				if ( !_setsz(&m.sz,*argv) ) m.sz = 2;
 				if ( _comunication(&m) ) {return -7;}
 				iarg = Verbose;
 					Verbose = TRUE;
@@ -406,7 +414,9 @@ int main(int argc,char** argv)
 					{_TESTP(1) ++argv;}
 				iarg = _valarg(*argv);	
 				memcpy(m.bf0,&iarg,m.sz);
-	
+				
+				//printf("debuw:%d %d %d\n",m.r,m.sz,iarg);
+				
 				if ( _comunication(&m) ) {return -7;}
 				iot_msg_print(&m);
 			return 0;
@@ -425,7 +435,10 @@ int main(int argc,char** argv)
 					{m.sz = 4;}
 				else
 					{_TESTP(1) ++argv;}
-				iarg = _valarg(*argv);	
+				iarg = _valarg(*argv);
+				
+				//printf("debui:%d %d %d\n",m.r,m.sz,iarg);
+				
 				memcpy(m.bf0,&iarg,m.sz);
 				
 				if ( _comunication(&m) ) {return -7;}

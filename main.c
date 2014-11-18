@@ -89,7 +89,7 @@ VOID buttonclick(VOID* p)
 int main() 
 {
 	//ard_init();
-	
+	/*
 	ios_exportall(IOS_EXPORT);
 	HIOS t = ios_open("ios/int","r");
 	UINT32 pin = IOS_P17;
@@ -106,6 +106,37 @@ int main()
 	ios_write(t,&st,1,1);
 	
 	ios_ioctl(t,IOS_IOCTL_INT_WAIT,NULL);
+	*/
+	
+	HIOS t = ios_open("ios/port","w");
+	
+	UINT32 pin = IOS_P02;
+	ios_ioctl(t,IOS_IOCTL_PORT_SET_0,&pin);
+	pin = IOS_P03;
+	ios_ioctl(t,IOS_IOCTL_PORT_SET_1,&pin);
+	pin = IOS_P04;
+	ios_ioctl(t,IOS_IOCTL_PORT_SET_2,&pin);
+	pin = IOS_P05;
+	ios_ioctl(t,IOS_IOCTL_PORT_SET_3,&pin);
+	
+	pin = 0x00;
+	ios_write(t,&pin,1,1);
+	pin = 0x01;
+	ios_write(t,&pin,1,1);
+	ios_msleep(500);
+	pin = 0x02;
+	ios_write(t,&pin,1,1);
+	ios_msleep(500);
+	pin = 0x04;
+	ios_write(t,&pin,1,1);
+	ios_msleep(500);
+	pin = 0x08;
+	ios_write(t,&pin,1,1);
+	ios_msleep(500);
+	pin = 0x00;
+	ios_write(t,&pin,1,1);
+	
+	ios_close(t);
 	
 	return 0;
 	
