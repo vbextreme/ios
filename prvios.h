@@ -225,6 +225,10 @@ typedef struct __HLCDA
 	BYTE dspfnc;
 }_HLCDA;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 UINT32 ard_send(BYTE cmd, BYTE p0, BYTE p1, BYTE p2);
 UINT32 ard_recs(BYTE* cmd, BYTE* p0, BYTE* p1, BYTE* p2);
 UINT32 ard_recv(BYTE* cppp);
@@ -268,6 +272,10 @@ INT32 _328_write(_H328* h,const VOID* v, UINT32 sz, UINT32 n);
 INT32 _328_read(_H328* h, VOID* v, UINT32 sz, UINT32 n);
 INT32 _328_ioctl(_H328* h, INT32 req, VOID* val);
 VOID _328_close(_H328* h);
+
+#ifdef __cplusplus
+}
+#endif
 
 /*
 ///da testare
