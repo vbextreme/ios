@@ -184,6 +184,10 @@ typedef struct __HIOS* HIOS;
 
 typedef VOID (*IOSINT)(VOID* par);
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 FLOAT64 ios_clock_get();
 UINT32 ios_mclock_get();
 UINT32 ios_uclock_get();
@@ -208,5 +212,9 @@ INT32 ios_write(HIOS h,const VOID* v, UINT32 sz, UINT32 n);
 INT32 ios_read(HIOS h, VOID* v, UINT32 sz, UINT32 n);
 INT32 ios_ioctl(HIOS h, INT32 req, VOID* v);
 VOID ios_close(HIOS h);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
