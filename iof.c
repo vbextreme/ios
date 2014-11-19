@@ -210,27 +210,30 @@ HIOS ios_open(CHAR* t,CHAR* m)
 		strcat(ph,"lib");
 		strcat(ph,nl);
 		strcat(ph,".so");
-		
-		if ( !(h->dl = dlopen(ph,RTLD_LOCAL)) ) {free(h); return NULL;}
+		if ( !(h->dl = dlopen(ph,RTLD_LAZY)) ) {free(h); return NULL;}
 		
 		strcpy(ph,nd);
 		strcat(ph,"_open");
 		_IOSOPEN iop;
 		if ( !(iop = (_IOSOPEN) dlsym(h->dl,ph) ) ) { dlclose(h->dl); free(h); return NULL;}
+		
 		strcpy(ph,nd);
 		strcat(ph,"_write");
-		if ( !(h->w = (_IOSWRITE) dlsym(h->dl,ph)) ) { dlclose(h->dl); free(h); return NULL;}
+		h->w = (_IOSWRITE) dlsym(h->dl,ph);
+		
 		strcpy(ph,nd);
 		strcat(ph,"_read");
-		if ( !(h->r = (_IOSREAD) dlsym(h->dl,ph)) ) { dlclose(h->dl); free(h); return NULL;}
+		h->r = (_IOSREAD) dlsym(h->dl,ph);
+		
 		strcpy(ph,nd);
 		strcat(ph,"_ioctl");
-		if ( !(h->i = (_IOSIOCTL) dlsym(h->dl,ph)) ) { dlclose(h->dl); free(h); return NULL;}
+		h->i = (_IOSIOCTL) dlsym(h->dl,ph);
+		
 		strcpy(ph,nd);
 		strcat(ph,"_close");
 		if ( !(h->c = (_IOSCLOSE) dlsym(h->dl,ph)) ) { dlclose(h->dl); free(h); return NULL;}
 		
-		if ( !(h->p = iop(t,m)) ) { dlclose(h->dl); free(h); return NULL;}
+		if ( !(h->p = iop(m)) ) { dlclose(h->dl); free(h); return NULL;}
 		return h;
 	}
 

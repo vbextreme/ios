@@ -198,7 +198,7 @@ BOOL _setpin(INT32* p, CHAR* arg)
 	}
 	
 	*p = f->val;
-	printf("ON ALIAS:%d\n",f->val);
+	//printf("ON ALIAS:%d\n",f->val);
 	return TRUE;
 }
 

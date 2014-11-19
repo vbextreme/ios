@@ -108,35 +108,53 @@ int main()
 	ios_ioctl(t,IOS_IOCTL_INT_WAIT,NULL);
 	*/
 	
-	HIOS t = ios_open("ios/port","w");
+	/*
+	HIOS t = ios_open("lightios/led","w");
+		if ( !t ) {puts("Error open library"); return 0;}
 	
-	UINT32 pin = IOS_P02;
-	ios_ioctl(t,IOS_IOCTL_PORT_SET_0,&pin);
-	pin = IOS_P03;
-	ios_ioctl(t,IOS_IOCTL_PORT_SET_1,&pin);
-	pin = IOS_P04;
-	ios_ioctl(t,IOS_IOCTL_PORT_SET_2,&pin);
-	pin = IOS_P05;
-	ios_ioctl(t,IOS_IOCTL_PORT_SET_3,&pin);
+	INT32 ret = IOS_P02;
+	if ( (ret = ios_ioctl(t,IOS_IOCTL_PIN_SET,&ret)) ) printf("Error ioctl:%d\n",ret);
+	ios_msleep(1000);
 	
-	pin = 0x00;
-	ios_write(t,&pin,1,1);
-	pin = 0x01;
-	ios_write(t,&pin,1,1);
-	ios_msleep(500);
-	pin = 0x02;
-	ios_write(t,&pin,1,1);
-	ios_msleep(500);
-	pin = 0x04;
-	ios_write(t,&pin,1,1);
-	ios_msleep(500);
-	pin = 0x08;
-	ios_write(t,&pin,1,1);
-	ios_msleep(500);
-	pin = 0x00;
-	ios_write(t,&pin,1,1);
+	ret = 255;
+	ios_write(t,&ret,1,1);
+	ios_msleep(1000);
+	
+	ret = 100;
+	ios_write(t,&ret,1,1);
+	ios_msleep(1000);
+	
+	ret = 55;
+	ios_write(t,&ret,1,1);
+	ios_msleep(1000);
+	
+	ret = 0;
+	ios_write(t,&ret,1,1);
+	ios_msleep(1000);
 	
 	ios_close(t);
+	*/
+	
+	HIOS h = ios_open("ios/pwm","w");
+	INT32 val = IOS_P02;
+	ios_ioctl(h, IOS_IOCTL_PWM_SET, &val);
+	val = 100;
+	ios_ioctl(h, IOS_IOCTL_PWM_SET_FQ, &val);
+	val = 127;
+	ios_ioctl(h, IOS_IOCTL_PWM_SET_DUTY, &val);
+	val = 0;
+	ios_ioctl(h, IOS_IOCTL_PWM_SET_TOUT, &val);
+	ios_ioctl(h, IOS_IOCTL_PWM_END_MODE, &val);
+	BYTE b = 1;
+	ios_write(h,&b,1,1);
+	
+	for ( val = 0; val < 256; ++val)
+	{
+		ios_ioctl(h, IOS_IOCTL_PWM_SET_DUTY, &val);
+		ios_msleep(300);
+	}
+	
+	ios_close(h);
 	
 	return 0;
 	
@@ -160,7 +178,7 @@ int main()
 		ios_msleep(1000);
 	}
 	*/
-	ios_close(t);
+	//ios_close(t);
 	
 	//terminate comunication 328
 	//ard_close();
