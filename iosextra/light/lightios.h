@@ -1,5 +1,5 @@
-#ifndef MAIN_H_INCLUDE
-#define MAIN_H_INCLUDE
+#ifndef LIGHTIOS_H_INCLUDE
+#define LIGHTIOS_H_INCLUDE
 
 #include <easytype.h>
 #include <stdio.h>

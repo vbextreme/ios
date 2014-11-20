@@ -19,6 +19,8 @@ int main(int argc,char** argv)
 	
 	if ( !dmn_init() ) return 0;
 	
+	ard_init(FALSE);
+	
 	MSGCMD m;
 	
 	while ( dmn_msg_read(&m) )
@@ -40,7 +42,7 @@ int main(int argc,char** argv)
 	}
 	
 	if ( logmode ) syslog(LOG_NOTICE,"Terminate daemonios");
-	
+	ard_close();
 	dmn_cortesia();
 	closelog();
 	

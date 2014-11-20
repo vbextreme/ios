@@ -123,6 +123,8 @@
 #define CMD_MDELAY       0x35
 #define CMD_UDELAY       0x36
 #define CMD_FREERAM      0x37
+#define CMD_GPZ          0x38
+#define CMD_SYNCCLK      0xFF
 
 typedef enum {HM_LDL,HM_U3L,HM_PIN,HM_PORT,HM_PULSE,HM_INT,HM_PWM,HM_328,HM_LCDA} HMODE;
 

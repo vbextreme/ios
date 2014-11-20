@@ -9,11 +9,49 @@ const BYTE IOS_PWM_START = 1;
 const BYTE IOS_PWM_RESUME = 2;
 
 static HSRL _com = NULL;
+static BOOL _csy = FALSE;
 
-VOID ard_init()
+BOOL ard_init(BOOL sync)
 {
-	if ( _com ) return;
+	if ( _com ) return TRUE;
 	_com = srl_open(FILE_COM,SRL_NONCANONICAL,COM_SPEED,8,0,1,COM_WAIT,COM_CMD);
+	
+	BYTE rc[4];
+	ard_send(CMD_GPZ,0,0,0);
+	ard_recv(rc);
+	
+	if ( rc[0] != CMD_GPZ ) {srl_close(_com); return FALSE;}
+	BYTE opz = rc[1];
+	
+	if ( opz & IOS_328_OPZ_SYNC )
+	{
+		ard_recv(rc);
+		if ( sync ) 
+		{
+			_csy = TRUE;
+		}
+		else
+		{
+			_csy = FALSE;
+			opz &= ~IOS_328_OPZ_SYNC;
+			ard_send(CMD_OPZ,opz,0,0);
+		}
+		return TRUE;
+	}
+	
+	if ( sync ) 
+	{
+		opz &= IOS_328_OPZ_SYNC;
+		ard_send(CMD_OPZ,opz,0,0);
+		ard_recv(rc);
+		_csy = TRUE;
+	}
+	else
+	{
+		_csy = FALSE;
+	}
+	
+	return TRUE;
 }
 
 VOID ard_close()
@@ -27,6 +65,15 @@ UINT32 ard_send(BYTE cmd, BYTE p0, BYTE p1, BYTE p2)
 {
 	if ( !_com ) return 0;
 	UINT32 vs = ((UINT32)(p2)<< 24) | ((UINT32)(p1)<< 16) | ((UINT32)(p0)<< 8) | cmd;
+	
+	if ( _csy )
+	{
+		UINT32 ret = srl_write(_com,&vs,4);
+		if ( ret )
+			ard_recv((BYTE*)&ret);
+		return ret;
+	}
+	
 	return srl_write(_com,&vs,4);
 }
 

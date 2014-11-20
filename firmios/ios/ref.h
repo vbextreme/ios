@@ -21,6 +21,7 @@
 #define OPZ_ASL          0x02
 #define OPZ_IOPC_RUN     0x04
 #define OPZ_OVDT         0x08
+#define OPZ_SYNC         0x10
 
 
 #define ONRES(C,P0,P1,P2) if ( opz & OPZ_RES ) { cmd_resp(C,P0,P1,P2); cmd_write();}
@@ -94,6 +95,8 @@
 #define CMD_MDELAY       0x35
 #define CMD_UDELAY       0x36
 #define CMD_FREERAM      0x37
+#define CMD_GPZ          0x38
+#define CMD_SYNCCLK      0xFF
 
 
 

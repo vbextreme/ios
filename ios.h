@@ -170,6 +170,7 @@
 #define IOS_328_OPZ_ASL          0x02
 #define IOS_328_OPZ_IOPC_RUN     0x04
 #define IOS_328_OPZ_OVDT         0x08
+#define IOS_328_OPZ_SYNC         0x10
 
 #define IAL_CODE_MAX 5000
 #define IAL_BYTECODE_MAX 512
@@ -203,7 +204,7 @@ INT32 ios_exportall(UINT32 mode);
 INT32 ios_dir_write(UINT32 pin, UINT32 d);
 INT32 ios_dir_read(UINT32 pin);
 
-VOID ard_init();
+BOOL ard_init(BOOL sync);
 VOID ard_close();
 INT32 i328_make(UINT32* offset, BYTE* bytecode, CHAR* code);
 

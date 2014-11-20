@@ -4,13 +4,13 @@
 
 ///OPZIONI
 byte opz;
+byte dissy;
 int o_tosleep;
 int o_maxto;
 unsigned long o_overflowdata;
 
 // PROTO
 // cmd p0 p1 p2
-
 byte _pc[MAX_CMD];
 byte _p0[MAX_CMD];
 byte _p1[MAX_CMD];
@@ -64,7 +64,7 @@ void setup()
   opz = OPZ_DBG | OPZ_ASL | OPZ_OVDT;
   o_tosleep = o_maxto = TOSLEEP;
   o_overflowdata = 0;
-  
+  dissy = 0;
   _pr = 0;
   _pw = 0;
   imem = 0;
@@ -92,24 +92,13 @@ void loop()
         if ( (opz & OPZ_OVDT) && cl_isfull()  )
             ++o_overflowdata;
         
-        //while ( Serial.available() < 4);
-        
-        ///MONITOR
-        
-        //#define invia(DATO) d = (DATO); Serial.write(&d,1)
-        //delay (1000);
-        //invia('D');
-        //RB comando ricevuto
-        
-        while ( !cl_isfull() && ( Serial.available() >= 4 ) )
+        while ( !cl_isfull() && ( Serial.available() > 3 ) )
         {   
             _pc[_pw] = Serial.read();
             _p0[_pw] = Serial.read();
             _p1[_pw] = Serial.read();
             _p2[_pw++] = Serial.read();
             if ( _pw == MAX_CMD ) _pw = 0;
-            
-            //ONDBG(READ)
         }
         
         //controllo comandi se vuoto attesa fino a sleep se impostato
@@ -118,6 +107,7 @@ void loop()
             //interprete
             if ( opz & OPZ_IOPC_RUN )
             {
+                if ( opz & OPZ_SYNC ) {opz &= ~OPZ_SYNC; dissy = 1;} 
                 pc = mem[oppc++];
                 if ( oppc >= MAX_MEM ) oppc = 0;
                 p0 = mem[oppc++];
@@ -145,7 +135,7 @@ void loop()
         }
         else
         {
-            //ONDBG(EXE)
+            if ( dissy ) {opz &= OPZ_SYNC; dissy = 1;} 
             pc = _pc[_pr];
             p0 = _p0[_pr];
             p1 = _p1[_pr];
@@ -171,6 +161,17 @@ void loop()
                 else  
                     opz = p0; 
             break; 
+            
+            case CMD_GPZ: 
+                if ( p1 ) 
+                    reg[p0] = opz; 
+                else  
+                {
+                    cmd_resp(CMD_GPZ,opz,0,0);
+                    cmd_write();
+                } 
+            break; 
+            
             
             case CMD_MAXTO:
                 if ( p2 ) 
@@ -459,7 +460,12 @@ void loop()
                 
             break; 
         }//SWITCH
-
+        
+        if ( opz & OPZ_SYNC )
+        {
+            cmd_resp(CMD_SYNCCLK,0,0,0);
+            cmd_write();            
+        }
     }//for erver
 }//main
 
