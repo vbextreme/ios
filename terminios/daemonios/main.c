@@ -1,13 +1,21 @@
 #include "main.h"
 
 extern BOOL logmode;
+BOOL syncmode;
 
 int main(int argc,char** argv)
 {
-	if (argc == 2 && !strcmp(argv[1],"--log"))
-		logmode = TRUE;
-	else
-		logmode = FALSE;
+	logmode = FALSE;
+	syncmode = FALSE;
+	
+	++argv;
+	while ( *argv )
+	{
+		if ( !strcmp(*argv,"--log") || !strcmp(*argv,"-l"))
+			logmode = TRUE;
+		else if ( !strcmp(*argv,"--sync") || !strcmp(*argv,"-s"))
+			syncmode = TRUE;
+	}
 	
 	if ( daemon(1,1) == -1 )
 	{
@@ -19,7 +27,7 @@ int main(int argc,char** argv)
 	
 	if ( !dmn_init() ) return 0;
 	
-	ard_init(FALSE);
+	ard_init(syncmode);
 	
 	MSGCMD m;
 	
