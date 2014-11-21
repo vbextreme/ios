@@ -36,6 +36,7 @@ typedef enum{CMD_NOP,CMD_EXIT,CMD_ERR,CMD_RESP,CMD_LS,CMD_EXP,CMD_EXPD,CMD_OPEN,
 #define TIO_CMD_WRITE      0x100F
 #define TIO_CMD_READ       0x1010
 #define TIO_CMD_IOCTL      0x1011
+#define TIO_CMD_ALINS      0x1012
 
 #define DMN_COMUNICATION "/home/odroid/.config/daemonios/terminioscom.fifo"
 #define DMN_DEV_MAX 1024

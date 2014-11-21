@@ -136,10 +136,10 @@ void aliasreset(CHAR* patha)
 	
 	fprintf(f,"-b = 0x%X\n", 1);
 	fprintf(f,"-d = 0x%X\n", 2);
-	fprintf(f,"-D = 0x%X", 4);
-	fprintf(f,"-s = 0x%X", 0);
-	fprintf(f,"-v = 0x%X", TIO_SIZE_VECTOR + 1);
-	fprintf(f,"-vd = 0x%X", TIO_SIZE_VECTOR + 4);
+	fprintf(f,"-D = 0x%X\n", 4);
+	fprintf(f,"-s = 0x%X\n", 0);
+	fprintf(f,"-v = 0x%X\n", TIO_SIZE_VECTOR + 1);
+	fprintf(f,"-vd = 0x%X\n", TIO_SIZE_VECTOR + 4);
 
 	fclose(f);
 }
@@ -180,6 +180,36 @@ INT32 aliasinit(CHAR* patha)
 	}
 	
 	fclose(f);
+	return 1;
+}
+
+INT32 aliasins(CHAR* patha, CHAR* pathins)
+{
+	
+	FILE* fd = fopen(patha,"w");
+	if ( !fd ) 
+	{
+		aliasreset(patha);
+		if ( !(fd = fopen(patha,"w")) ) return 0;
+	}
+	
+	fseek(fd,0,SEEK_END);
+	
+	FILE* fs = fopen(pathins,"r");
+		if ( !fs ) { fclose(fd); return 0;}
+	
+	CHAR line[256];
+	
+	while ( fgets(line,254,fs) )
+	{
+		if (line[strlen(line)-1] != '\n')
+			fprintf(fd,"%s\n",line);
+		else
+			fprintf(fd,"%s",line);
+	}
+	
+	fclose(fd);
+	fclose(fs);
 	return 1;
 }
 
@@ -299,6 +329,14 @@ int main(int argc,char** argv)
 			
 			case TIO_CMD_ALS:
 				ali_print(&ha);
+			return 0;
+			
+			case TIO_CMD_ALINS:
+				_TESTP(1)
+				if ( !aliasins(TIO_ALIAS,*(argv+1)) )
+					printf("error to read new alias");
+				else
+					_verbose("add new alias");
 			return 0;
 			
 			case TIO_CMD_MDELAY:
@@ -429,13 +467,13 @@ int main(int argc,char** argv)
 					INT32 esz = m.sz - TIO_SIZE_VECTOR;
 					m.sz = _valarg(*argv);	
 					INT32 i;
-					BYTE* m = m.bf0;
-					for ( i = 0; i < m.sz; ++i, m += esz)
+					CHAR* m0 = m.bf0;
+					for ( i = 0; i < m.sz; ++i, m0 += esz)
 					{
 						_TESTP(1)
 						++argv;
 						iarg = _valarg(*argv);	
-						memcpy(m,&iarg,esz);
+						memcpy(m0,&iarg,esz);
 					}	
 				}
 				else	
@@ -474,13 +512,13 @@ int main(int argc,char** argv)
 					INT32 esz = m.sz - TIO_SIZE_VECTOR;
 					m.sz = _valarg(*argv);	
 					INT32 i;
-					BYTE* m = m.bf0;
-					for ( i = 0; i < m.sz; ++i, m += esz)
+					CHAR* m0 = m.bf0;
+					for ( i = 0; i < m.sz; ++i, m0 += esz)
 					{
 						_TESTP(1)
 						++argv;
 						iarg = _valarg(*argv);	
-						memcpy(m,&iarg,esz);
+						memcpy(m0,&iarg,esz);
 					}	
 				}
 				else	
