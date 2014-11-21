@@ -35,14 +35,14 @@ int main(int argc,char** argv)
 	{	
 		if ( m.ct == CMD_EXIT )
 		{
-			if ( logmode ) syslog(LOG_NOTICE,"Exit daemonios");
+			if ( logmode ) syslog(LOG_NOTICE,"[Notice]Exit daemonios");
 			dmn_msg_send(CMD_RESP,NULL,NULL,1,0);
 			break;
 		}
 		
 		if ( !dmn_cmd_exec(&m) )
 		{ 
-			syslog(LOG_ERR,"Type message error:%d",m.ct);
+			syslog(LOG_ERR,"[Error]Type message error:%d",m.ct);
 			dmn_msg_send(CMD_RESP,NULL,NULL,-99,0);
 			continue;
 		}

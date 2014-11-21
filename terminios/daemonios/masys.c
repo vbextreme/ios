@@ -23,7 +23,7 @@ BOOL dmn_init()
 	
 	if ( mkfifo(DMN_COMUNICATION,0666) == -1 ) 
 	{
-		syslog(LOG_ERR,"error create fifo");
+		syslog(LOG_ERR,"[Error]error create fifo");
 		return FALSE;
 	}
 	
@@ -81,7 +81,7 @@ VOID dmn_ls(CHAR* d)
 
 BOOL dmn_msg_send(CMDTYPE ct, CHAR* bf0, CHAR* bf1, INT32 r, UINT32 sz)
 {
-	if ( logmode ) syslog(LOG_NOTICE,"Message Send:%d",ct);
+	if ( logmode ) syslog(LOG_NOTICE,"[Notice]Message Send:%d",ct);
 	
 	MSGCMD m;
 	
@@ -102,26 +102,26 @@ BOOL dmn_msg_send(CMDTYPE ct, CHAR* bf0, CHAR* bf1, INT32 r, UINT32 sz)
 	m.sz = sz;
 	
 	INT32 f = open(DMN_COMUNICATION,O_WRONLY);
-		if ( f == -1 ) {syslog(LOG_ERR,"Comunication writing error open");return FALSE;}
-	if ( write(f, &m, sizeof(MSGCMD) ) < 1) {syslog(LOG_ERR,"Comunication error write");close(f); return FALSE;}
+		if ( f == -1 ) {syslog(LOG_ERR,"[Error]Comunication writing error open");return FALSE;}
+	if ( write(f, &m, sizeof(MSGCMD) ) < 1) {syslog(LOG_ERR,"[Error]Comunication error write");close(f); return FALSE;}
 	close(f);
 	return TRUE;
 }
 
 BOOL dmn_msg_read(MSGCMD* m)
 {
-	if ( logmode ) syslog(LOG_NOTICE,"Message recv");
+	if ( logmode ) syslog(LOG_NOTICE,"[Notice]Message recv");
 	INT32 f = open(DMN_COMUNICATION,O_RDONLY);
-		if ( f == -1 ) {syslog(LOG_ERR,"Comunication reading error open");return FALSE;}
+		if ( f == -1 ) {syslog(LOG_ERR,"[Error]Comunication reading error open");return FALSE;}
 	_msg_reset(m);
-	if ( read(f, m, sizeof(MSGCMD)) < sizeof(MSGCMD) ) {syslog(LOG_ERR,"Comunication error reading");close(f); return FALSE;}
+	if ( read(f, m, sizeof(MSGCMD)) < sizeof(MSGCMD) ) {syslog(LOG_ERR,"[Error]Comunication error reading");close(f); return FALSE;}
 	close(f);
 	return TRUE;
 }
 
 BOOL dmn_cmd_exec(MSGCMD* m)
 {
-	if ( logmode ) syslog(LOG_NOTICE,"Message exec:%d",m->ct);
+	if ( logmode ) syslog(LOG_NOTICE,"[Notice]Message exec:%d",m->ct);
 	
 	INT32 ih,mode;
 	BYTE rbuf[DMN_BUF0_MAX];
@@ -129,52 +129,52 @@ BOOL dmn_cmd_exec(MSGCMD* m)
 	switch (m->ct)
 	{
 		case CMD_NOP: 
-			if ( logmode ) syslog(LOG_NOTICE,"Command NOP");
+			if ( logmode ) syslog(LOG_NOTICE,"[Notice]Command NOP");
 			mode = 1;
 		break;
 		
 		case CMD_ERR: 
-			if ( logmode ) syslog(LOG_NOTICE,"Command Error");
+			if ( logmode ) syslog(LOG_NOTICE,"[Notice]Command Error");
 		return FALSE;
 		
 		case CMD_EXIT: 
-			if ( logmode ) syslog(LOG_NOTICE,"Command Exit");
+			if ( logmode ) syslog(LOG_NOTICE,"[Notice]Command Exit");
 		return FALSE;
 		
 		case CMD_EXP:
-			if ( logmode ) syslog(LOG_NOTICE,"Command Export");
+			if ( logmode ) syslog(LOG_NOTICE,"[Notice]Command Export");
 			mode = ( ios_export(m->r,m->sz) ) ? 0 : 1; 
-			if ( logmode ) syslog(LOG_INFO,"mode:%d",mode);
+			if ( logmode ) syslog(LOG_INFO,"[Info]mode:%d",mode);
 			dmn_msg_send(CMD_RESP,NULL,NULL,mode,0);
 		return TRUE;
 		
 		case CMD_EXPD:
-			if ( logmode ) syslog(LOG_NOTICE,"Command Exported");
+			if ( logmode ) syslog(LOG_NOTICE,"[Notice]Command Exported");
 			mode = ios_exported(m->r);
 			dmn_msg_send(CMD_RESP,NULL,NULL,mode,0);
 		return TRUE;
 		
 		case CMD_OPEN:
-			if ( logmode ) syslog(LOG_NOTICE,"Command Open");
+			if ( logmode ) syslog(LOG_NOTICE,"[Notice]Command Open");
 			if ( dmn_getifn(m->dev) != -1 ) 
 			{ 
-				if ( logmode ) syslog(LOG_INFO,"Name:\"%s\" alredy exist",m->dev);
+				if ( logmode ) syslog(LOG_INFO,"[Info]Name:\"%s\" alredy exist",m->dev);
 				mode = -1; 
 				break;
 			}
 			ih = dmn_getih();
 			if ( ih < 0 ) 
 			{ 
-				if ( logmode ) syslog(LOG_WARNING,"Max Number device");
+				if ( logmode ) syslog(LOG_WARNING,"[Warning]Max Number device");
 				mode = -2; 
 				break;
 			}
 			
-			if ( logmode ) syslog(LOG_INFO,"name:\"%s\" ih:%d path:\"%s\" mode:\"%s\"",m->dev,ih,m->bf0,m->bf1); 
+			if ( logmode ) syslog(LOG_INFO,"[Info]name:\"%s\" ih:%d path:\"%s\" mode:\"%s\"",m->dev,ih,m->bf0,m->bf1); 
 				
 			if ( !(_h[ih] = ios_open(m->bf0,m->bf1)) ) 
 			{ 
-				syslog(LOG_ERR,"IOS can't open device");
+				syslog(LOG_ERR,"[Error]IOS can't open device");
 				mode = -3; 
 				break;
 			}
@@ -183,16 +183,16 @@ BOOL dmn_cmd_exec(MSGCMD* m)
 		break;
 		
 		case CMD_READ:
-			if ( logmode ) syslog(LOG_NOTICE,"Command Read");
+			if ( logmode ) syslog(LOG_NOTICE,"[Notice]Command Read");
 			if ( (ih = dmn_getifn(m->dev)) == -1 ) 
 			{
-				if ( logmode ) syslog(LOG_INFO,"No device:%s",m->dev); 
+				if ( logmode ) syslog(LOG_INFO,"[Info]No device:%s",m->dev); 
 				mode = -1; 
 				break;
 			}
 			if ( !ios_read(_h[ih],rbuf,m->sz,m->r) ) 
 			{
-				syslog(LOG_ERR,"IOS can't read device"); 
+				syslog(LOG_ERR,"[Error]IOS can't read device"); 
 				mode = -4; 
 				break;
 			}
@@ -200,16 +200,16 @@ BOOL dmn_cmd_exec(MSGCMD* m)
 		return TRUE;
 		
 		case CMD_WRITE:
-			if ( logmode ) syslog(LOG_NOTICE,"Command Write");
+			if ( logmode ) syslog(LOG_NOTICE,"[Notice]Command Write");
 			if ( (ih = dmn_getifn(m->dev)) == -1 ) 
 			{ 
-				if ( logmode ) syslog(LOG_INFO,"No device:%s",m->dev); 
+				if ( logmode ) syslog(LOG_INFO,"[Info]No device:%s",m->dev); 
 				mode = -1; 
 				break;
 			}
 			if ( !ios_write(_h[ih],m->bf0,m->sz,m->r) ) 
 			{
-				syslog(LOG_ERR,"IOS can't write device:ih:%d,v:%d,sz:%d,n:%d",ih,*((INT32*)(m->bf0)),m->sz,m->r); 
+				syslog(LOG_ERR,"[Error]IOS can't write device:ih:%d,v:%d,sz:%d,n:%d",ih,*((INT32*)(m->bf0)),m->sz,m->r); 
 				mode = -5; 
 				break;
 			}
@@ -217,17 +217,17 @@ BOOL dmn_cmd_exec(MSGCMD* m)
 		break;
 		
 		case CMD_IOCTL:
-			if ( logmode ) syslog(LOG_NOTICE,"Command Ioctl");
+			if ( logmode ) syslog(LOG_NOTICE,"[Notice]Command Ioctl");
 			memcpy(&mode,m->bf0,4);
 			if ( (ih = dmn_getifn(m->dev)) == -1 )
 			{ 
-				if ( logmode ) syslog(LOG_INFO,"No device:%s",m->dev); 
+				if ( logmode ) syslog(LOG_INFO,"[Info]No device:%s",m->dev); 
 				mode = -1; 
 				break;
 			}
 			if ( (mode = ios_ioctl(_h[ih],m->r,m->bf0)) ) 
 			{ 
-				syslog(LOG_ERR,"IOS error ioctl:%d to req:%d value:%d",mode,m->r,*((INT32*)(m->bf0))); 
+				syslog(LOG_ERR,"[Error]IOS error ioctl:%d to req:%d value:%d",mode,m->r,*((INT32*)(m->bf0))); 
 				mode = -6; 
 				break;
 			}
@@ -235,11 +235,11 @@ BOOL dmn_cmd_exec(MSGCMD* m)
 		break;
 		
 		case CMD_CLOSE:
-			if ( logmode ) syslog(LOG_NOTICE,"Command Close");
+			if ( logmode ) syslog(LOG_NOTICE,"[Notice]Command Close");
 			
 			if ( (ih = dmn_getifn(m->dev)) == -1 )
 			{ 
-				if ( logmode ) syslog(LOG_INFO,"No device:%s",m->dev); 
+				if ( logmode ) syslog(LOG_INFO,"[Info]No device:%s",m->dev); 
 				mode = -1; 
 				break;
 			}
@@ -250,13 +250,13 @@ BOOL dmn_cmd_exec(MSGCMD* m)
 		break;
 		
 		case CMD_LS:
-			if ( logmode ) syslog(LOG_NOTICE,"Command ls");
+			if ( logmode ) syslog(LOG_NOTICE,"[Notice]Command ls");
 			dmn_ls((CHAR*)rbuf);
 			dmn_msg_send(CMD_LS,(CHAR*)rbuf,NULL,0,strlen((CHAR*)rbuf));
 		return TRUE;
 		
 		default: 
-			syslog(LOG_ERR,"Command undefinited"); 
+			syslog(LOG_ERR,"[Error]Command undefinited"); 
 		return FALSE;
 	}
 	
