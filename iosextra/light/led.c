@@ -4,7 +4,7 @@ _HLED* led_open(CHAR* mode)
 {
 	if ( *mode != 'w' ) return NULL;
 	
-	_HLED* ld = malloc(sizeof(ld));
+	_HLED* ld = malloc(sizeof(_HLED));
 	
 	ld->p = ios_open("ios/pwm",mode);
 	ld->status = 0;
@@ -37,6 +37,13 @@ INT32 led_ioctl(_HLED* h, INT32 req, VOID* val)
 			h->status = 1;
 		break;
 		
+		case LED_IOCTL_MODE:
+			if ( *((INT32*)(val)) ) 
+				h->status = 2;
+			else
+				h->status = 1;
+		break;
+		
 		case IOS_IOCTL_PWM_SET_FQ:
 			return ios_ioctl(h->p,req,val);
 		
@@ -47,10 +54,16 @@ INT32 led_ioctl(_HLED* h, INT32 req, VOID* val)
 	return 0;
 }
 
+
 INT32 led_write(_HLED* h,const VOID* v, UINT32 sz, UINT32 n)
 {
 	if (sz < 1) return 0;
-	ios_ioctl(h->p,IOS_IOCTL_PWM_SET_DUTY,v);
+	
+	BYTE s = *((const BYTE*)(v));
+	
+	if ( h->status == 2 ) s = 255 - s;
+	
+	ios_ioctl(h->p,IOS_IOCTL_PWM_SET_DUTY,&s);
 	return 1;
 }
 
