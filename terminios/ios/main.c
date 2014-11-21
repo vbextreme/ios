@@ -137,6 +137,9 @@ void aliasreset(CHAR* patha)
 	fprintf(f,"-b = 0x%X\n", 1);
 	fprintf(f,"-d = 0x%X\n", 2);
 	fprintf(f,"-D = 0x%X", 4);
+	fprintf(f,"-s = 0x%X", 0);
+	fprintf(f,"-v = 0x%X", TIO_SIZE_VECTOR + 1);
+	fprintf(f,"-vd = 0x%X", TIO_SIZE_VECTOR + 4);
 
 	fclose(f);
 }
@@ -411,10 +414,35 @@ int main(int argc,char** argv)
 				if ( !_setsz(&m.sz,*argv) ) 
 					{m.sz = 1;}
 				else
-					{_TESTP(1) ++argv;}
-				iarg = _valarg(*argv);	
-				memcpy(m.bf0,&iarg,m.sz);
+				{
+					_TESTP(1)
+					++argv;
+				}
 				
+				if (m.sz == 0)
+				{
+					m.sz = strlen(*argv);
+					strcpy(m.bf0,*argv);
+				}
+				else if ( m.sz > TIO_SIZE_VECTOR )
+				{
+					INT32 esz = m.sz - TIO_SIZE_VECTOR;
+					m.sz = _valarg(*argv);	
+					INT32 i;
+					BYTE* m = m.bf0;
+					for ( i = 0; i < m.sz; ++i, m += esz)
+					{
+						_TESTP(1)
+						++argv;
+						iarg = _valarg(*argv);	
+						memcpy(m,&iarg,esz);
+					}	
+				}
+				else	
+				{
+					iarg = _valarg(*argv);	
+					memcpy(m.bf0,&iarg,m.sz);
+				}
 				//printf("debuw:%d %d %d\n",m.r,m.sz,iarg);
 				
 				if ( _comunication(&m) ) {return -7;}
@@ -435,11 +463,33 @@ int main(int argc,char** argv)
 					{m.sz = 4;}
 				else
 					{_TESTP(1) ++argv;}
-				iarg = _valarg(*argv);
+				
+				if (m.sz == 0)
+				{
+					m.sz = strlen(*argv);
+					strcpy(m.bf0,*argv);
+				}
+				else if ( m.sz > TIO_SIZE_VECTOR )
+				{
+					INT32 esz = m.sz - TIO_SIZE_VECTOR;
+					m.sz = _valarg(*argv);	
+					INT32 i;
+					BYTE* m = m.bf0;
+					for ( i = 0; i < m.sz; ++i, m += esz)
+					{
+						_TESTP(1)
+						++argv;
+						iarg = _valarg(*argv);	
+						memcpy(m,&iarg,esz);
+					}	
+				}
+				else	
+				{
+					iarg = _valarg(*argv);	
+					memcpy(m.bf0,&iarg,m.sz);
+				}
 				
 				//printf("debui:%d %d %d\n",m.r,m.sz,iarg);
-				
-				memcpy(m.bf0,&iarg,m.sz);
 				
 				if ( _comunication(&m) ) {return -7;}
 				iot_msg_print(&m);
