@@ -187,11 +187,11 @@ INT32 aliasinit(CHAR* patha)
 INT32 aliasins(CHAR* patha, CHAR* pathins)
 {
 	
-	FILE* fd = fopen(patha,"w");
+	FILE* fd = fopen(patha,"r+");
 	if ( !fd ) 
 	{
 		aliasreset(patha);
-		if ( !(fd = fopen(patha,"w")) ) return 0;
+		if ( !(fd = fopen(patha,"r+")) ) return 0;
 	}
 	
 	fseek(fd,0,SEEK_END);
