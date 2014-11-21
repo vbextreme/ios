@@ -101,7 +101,7 @@ BOOL dmn_msg_send(CMDTYPE ct, CHAR* bf0, CHAR* bf1, INT32 r, UINT32 sz)
 	m.r = r;
 	m.sz = sz;
 	
-	INT32 f = open(DMN_COMUNICATION,O_WRONLY);
+	INT32 f = open(DMN_COMUNICATION,O_WRONLY | O_NONBLOCK);
 		if ( f == -1 ) {syslog(LOG_ERR,"[Error]Comunication writing error open");return FALSE;}
 	if ( write(f, &m, sizeof(MSGCMD) ) < 1) {syslog(LOG_ERR,"[Error]Comunication error write");close(f); return FALSE;}
 	close(f);
@@ -111,11 +111,40 @@ BOOL dmn_msg_send(CMDTYPE ct, CHAR* bf0, CHAR* bf1, INT32 r, UINT32 sz)
 BOOL dmn_msg_read(MSGCMD* m)
 {
 	if ( logmode ) syslog(LOG_NOTICE,"[Notice]Message recv");
+	
 	INT32 f = open(DMN_COMUNICATION,O_RDONLY);
 		if ( f == -1 ) {syslog(LOG_ERR,"[Error]Comunication reading error open");return FALSE;}
 	_msg_reset(m);
+	
+	fd_set set;
+	struct timeval timeout;
+	int rv;
+	FD_ZERO(&set); /* clear the set */
+	FD_SET(f, &set); /* add our file descriptor to the set */
+
+	timeout.tv_sec = 0;
+	timeout.tv_usec = 5000;
+	
+	syslog(LOG_ERR,"[Info]Try read");
+
+	rv = select(FD_SETSIZE, &set, NULL, NULL,&timeout);
+	if ( rv == -1 )
+    {
+		syslog(LOG_ERR,"[Error]Comunication select");
+		close(f);
+		return FALSE;
+	}
+	else if ( rv == 0 )
+	{
+		syslog(LOG_ERR,"[Error]Comunication timeout");
+		close(f);
+		return FALSE;
+	}
+
 	if ( read(f, m, sizeof(MSGCMD)) < sizeof(MSGCMD) ) {syslog(LOG_ERR,"[Error]Comunication error reading");close(f); return FALSE;}
 	close(f);
+	
+	syslog(LOG_ERR,"[Info]ok");
 	return TRUE;
 }
 
@@ -218,7 +247,6 @@ BOOL dmn_cmd_exec(MSGCMD* m)
 		
 		case CMD_IOCTL:
 			if ( logmode ) syslog(LOG_NOTICE,"[Notice]Command Ioctl");
-			memcpy(&mode,m->bf0,4);
 			if ( (ih = dmn_getifn(m->dev)) == -1 )
 			{ 
 				if ( logmode ) syslog(LOG_INFO,"[Info]No device:%s",m->dev); 

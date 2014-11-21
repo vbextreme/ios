@@ -15,6 +15,7 @@ int main(int argc,char** argv)
 			logmode = TRUE;
 		else if ( !strcmp(*argv,"--sync") || !strcmp(*argv,"-s"))
 			syncmode = TRUE;
+		++argv;
 	}
 	
 	if ( daemon(1,1) == -1 )

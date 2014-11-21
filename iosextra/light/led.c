@@ -21,8 +21,12 @@ INT32 led_ioctl(_HLED* h, INT32 req, VOID* val)
 				ios_close(h->p);
 				h->p = ios_open("ios/pwm","w");
 			}
-			ios_ioctl(h->p,IOS_IOCTL_PWM_SET,val);
-			INT32 v = 500;
+			if ( ios_ioctl(h->p,IOS_IOCTL_PWM_SET,val) )
+			{
+				ios_close(h->p);
+				return IOS_ERR_PIN;
+			}
+			INT32 v = 100;
 			ios_ioctl(h->p,IOS_IOCTL_PWM_SET_FQ,&v);
 			v = 0;
 			ios_ioctl(h->p,IOS_IOCTL_PWM_END_MODE,&v);
