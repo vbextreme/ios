@@ -67,6 +67,7 @@ void aliasreset(CHAR* patha)
 	fprintf(f,"-h = 0x%X\n", TIO_CMD_HELP);
 	fprintf(f,"aliasreset = 0x%X\n", TIO_CMD_ALIASRESET);
 	fprintf(f,"als = 0x%X\n", TIO_CMD_ALS);
+	fprintf(f,"alins = 0x%X\n", TIO_CMD_ALINS);
 	fprintf(f,"--help = 0x%X\n", TIO_CMD_HELP);
 	fprintf(f,"exported = 0x%X\n", TIO_CMD_EXPORTED);
 	fprintf(f,"export = 0x%X\n", TIO_CMD_EXPORT);
