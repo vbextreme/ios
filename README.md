@@ -1,10 +1,10 @@
 IOS
 ===
-library for the management of the shield input output for ODROID u3
+library for the management of the shield input output for ODROID u3<br>
+iosextra contains extra device for ios, led,rgbled, lcd,ic etc... work in progress
 
 State:
 ======
- * external device not tested
  * writing documentation
  * writing example
  * i328 input not tested
@@ -26,8 +26,10 @@ Required:
 Install:
 ========
 $./configure<br>
-$sudo ./install
-
+$sudo ./install<br>
+<br>
 cd ./terminios<br>
 $./configure<br>
-$sudo ./install
+$sudo ./install<br>
+<br>
+
