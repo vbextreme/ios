@@ -24,7 +24,6 @@ typedef struct __HRGB
 	_HLED* r;
 	_HLED* g;
 	_HLED* b;
-	INT32 status; 
 }_HRGB;
 
 

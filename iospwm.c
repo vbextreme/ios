@@ -6,7 +6,7 @@ VOID _pwm_set(_HPWM* h)
 	h->per -= IOS_OFFSET_SLEEP;
 	
 	if ( h->duty == 0 )
-		h->don = 0;//(h->per / 2.0) * 1000000.0;
+		h->don = 0.0;
 	else
 		h->don = ((h->per * h->duty) / 256.0) * 1000000.0;
 }
@@ -16,7 +16,7 @@ VOID* _pwm(VOID* s)
 	fflush(stdout);
 	
 	THREAD_START(s,_HPWM*,h);
-		
+	
 	_pin_write(h->hp,&h->em,1,1);
 		
 	FLOAT64 offset;
@@ -29,26 +29,36 @@ VOID* _pwm(VOID* s)
 	{
 		THREAD_REQUEST();
 		
-		while ( h->duty == 0 ) usleep( (h->per * 1000000.0 - h->don) - offset * 1000000.0);
-		
-		offset = ios_clock_get();
+		if ( h->duty > 0 )
+		{
+			offset = ios_clock_get();
+				w = !w;
+				//printf("on->%d\n",w);
+				_pin_write(h->hp,&w,1,1);
+			offset = ios_clock_get() - offset;
+			usleep(h->don - offset * 1000000.0);
+		}
+		else
 			w = !w;
-			_pin_write(h->hp,&w,1,1);
-		offset = ios_clock_get() - offset;
-		usleep(h->don - offset * 1000000.0);
 		
-		offset = ios_clock_get();
+		if ( h->duty < 255 )
+		{
+			offset = ios_clock_get();
+				w = !w;
+				//printf("off->%d\n",w);
+			    _pin_write(h->hp,&w,1,1);
+			offset = ios_clock_get() - offset;
+			usleep( (h->per * 1000000.0 - h->don) - offset * 1000000.0);
+		}
+		else
 			w = !w;
-			_pin_write(h->hp,&w,1,1);
-		offset = ios_clock_get() - offset;
-		usleep( (h->per * 1000000.0 - h->don) - offset * 1000000.0);
 		
 		h->elapse = ios_clock_get() - stt;
 		if (h->ent && ( h->remt < (ios_clock_get() - stt) ) ) break;
 	}
 	
 	THREAD_ONEXIT
-	
+
 	_pin_write(h->hp,&h->em,1,1);
 	
 	THREAD_END(NULL);
@@ -204,9 +214,10 @@ INT32 _pwm_ioctl(_HPWM* h, INT32 req, VOID* s)
 		
 		case IOS_IOCTL_PWM_SET_DUTY:
 			if (h->d != 1) return IOS_ERR_IOCTL;
-			if ( *v > 255) return IOS_ERR_PWM;
-			if ( *v < 0) return IOS_ERR_PWM;
-			h->duty = *v;
+			if ( *v > 255 ) 
+				h->duty = 255;
+			else
+				h->duty = *v;
 			if ( h->p )
 				ard_send(CMD_PWM_DT_SET,h->p,(BYTE)h->duty,0);
 			else

@@ -135,26 +135,68 @@ int main()
 	ios_close(t);
 	*/
 	
+	/*
+	ios_exportall(IOS_EXPORT);
+	
 	HIOS h = ios_open("ios/pwm","w");
-	INT32 val = IOS_P02;
+	UINT32 val = IOS_P00;
 	ios_ioctl(h, IOS_IOCTL_PWM_SET, &val);
 	val = 100;
 	ios_ioctl(h, IOS_IOCTL_PWM_SET_FQ, &val);
-	val = 127;
+	val = 0;
 	ios_ioctl(h, IOS_IOCTL_PWM_SET_DUTY, &val);
 	val = 0;
 	ios_ioctl(h, IOS_IOCTL_PWM_SET_TOUT, &val);
+	val = 1;
 	ios_ioctl(h, IOS_IOCTL_PWM_END_MODE, &val);
 	BYTE b = 1;
 	ios_write(h,&b,1,1);
 	
+	puts("off");
+	ios_msleep(1000);
+	
 	for ( val = 0; val < 256; ++val)
 	{
 		ios_ioctl(h, IOS_IOCTL_PWM_SET_DUTY, &val);
-		ios_msleep(300);
+		ios_msleep(50);
+		printf("%d\n",val);
+		fflush(stdout);
 	}
+		
+	ios_close(h);
+	ios_msleep(3000);
+	
+	return 0;
+	*/
+	
+	HIOS h = ios_open("lightios/rgb","w");
+	UINT32 val = 1;
+	ios_ioctl(h,0x03,&val);
+	val = IOS_P00;
+	ios_ioctl(h, 0x00, &val);
+	val = IOS_P01;
+	ios_ioctl(h, 0x01, &val);
+	val = IOS_P02;
+	ios_ioctl(h, 0x02, &val);
+	
+	puts("rr");
+	UINT32 col = 0x00FF0000;
+	ios_write(h,&col,4,1);
+	ios_msleep(1000);
+	
+	puts("gg");
+	col = 0x0000FF00;
+	ios_write(h,&col,4,1);
+	ios_msleep(1000);
+	
+	puts("bb");
+	col = 0x000000FF;
+	ios_write(h,&col,4,1);
+	ios_msleep(1000);
+	
 	
 	ios_close(h);
+	ios_msleep(5000);
 	
 	return 0;
 	

@@ -1,5 +1,7 @@
 #include "lightios.h"
 
+//00RRGGBB
+
 _HRGB* rgb_open(CHAR* mode)
 {
 	if ( *mode != 'w' ) return NULL;
@@ -10,7 +12,6 @@ _HRGB* rgb_open(CHAR* mode)
 	ld->g = led_open("w");
 	ld->b = led_open("w");
 	
-	ld->status = 0;
 	return ld;
 }
 
@@ -28,11 +29,10 @@ INT32 rgb_ioctl(_HRGB* h, INT32 req, VOID* val)
 			return led_ioctl(h->b,IOS_IOCTL_PIN_SET,val);
 		
 		case RGB_IOCTL_MODE:
-			if ( *((INT32*)(val)) ) 
-				h->status = 2;
-			else
-				h->status = 1;
-		break;
+			led_ioctl(h->r,LED_IOCTL_MODE,val);
+			led_ioctl(h->g,LED_IOCTL_MODE,val);
+			led_ioctl(h->b,LED_IOCTL_MODE,val);
+		return 0;
 		
 		default:
 		return IOS_ERR_IOCTL;
@@ -45,27 +45,15 @@ INT32 rgb_write(_HRGB* h,const VOID* v, UINT32 sz, UINT32 n)
 {
 	if (sz < 3) return 0;
 	
-	if ( h->status == 2 )
-	{
-		const BYTE* c = (const BYTE*) v;
-		BYTE s;
-		s = 255 - *c++;
-		led_ioctl(h->r,IOS_IOCTL_PWM_SET_DUTY,&s);
-		s = 255 - *c++;
-		led_ioctl(h->g,IOS_IOCTL_PWM_SET_DUTY,&s);
-		s = 255 - *c++;
-		led_ioctl(h->b,IOS_IOCTL_PWM_SET_DUTY,&s);
-	}
-	else
-	{
-		const BYTE* c = (const BYTE*) v;
-		BYTE s = *c++;
-		led_ioctl(h->r,IOS_IOCTL_PWM_SET_DUTY,&s);
-		s = *c++;
-		led_ioctl(h->g,IOS_IOCTL_PWM_SET_DUTY,&s);
-		s = *c;
-		led_ioctl(h->b,IOS_IOCTL_PWM_SET_DUTY,&s);
-	}
+	const BYTE* c = (const BYTE*) v;
+	
+	BYTE s = *c++;
+	led_write(h->b,&s,1,1);
+	s = *c++;
+	led_write(h->g,&s,1,1);
+	s = *c;
+	led_write(h->r,&s,1,1);
+	
 	return 1;
 }
 
